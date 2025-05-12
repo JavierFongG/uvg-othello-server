@@ -3,7 +3,9 @@ import pandas as pd
 import requests 
 # from streamlit_autorefresh import st_autorefresh
 # Set Streamlit to wide mode
+
 st.set_page_config(layout="wide")
+
 def count_pieces(board):
     black = sum(row.count(-1) for row in board)
     white = sum(row.count(1) for row in board)
@@ -28,7 +30,7 @@ def matches_to_dataframe(match_data):
 
     return pd.DataFrame(rows)
 
-
+BASE_URL = 'https://7b679617-8c6b-4d0f-bb51-0505412c6c17.us-east-1.cloud.genez.io'
 
 # Initialize session state for tournament data
 if "tournament_data" not in st.session_state:
@@ -44,15 +46,15 @@ tournament_name = st.text_input("Enter Tournament Name", "")
 if tournament_name:
     st.header(f"Tournament: {tournament_name}")
 
-req = requests.get("http://localhost:8000/tournament/available")
+req = requests.get(f"{BASE_URL}/tournament/available")
 
 available_tournaments = req.json()['available_tournaments']
 
 if tournament_name:
     if tournament_name not in available_tournaments: 
-        req = requests.post("http://localhost:8000/tournament/create", json={"name": tournament_name})
+        req = requests.post("{BASE_URL}/tournament/create", json={"name": tournament_name})
 
-    req = requests.get(f"http://localhost:8000/tournament/players/{tournament_name}")
+    req = requests.get(f"{BASE_URL}/tournament/players/{tournament_name}")
 
     # st.json(req.json())
     st.dataframe(pd.DataFrame(req.json()['players']))
@@ -60,7 +62,7 @@ if tournament_name:
     play_button = st.button('Play')
 
     if play_button: 
-        req = requests.post("http://localhost:8000/pair/", params={"tournament_name": tournament_name})
+        req = requests.post("{BASE_URL}/pair/", params={"tournament_name": tournament_name})
         
         if req.status_code == 200: 
             st.text('Empecemos!!!')
@@ -73,7 +75,7 @@ if tournament_name:
     refresh_button = st.button('Refresh')
 
     if refresh_button:
-        matches = matches_to_dataframe(requests.get(f"http://localhost:8000/tournament/matches/{tournament_name}").json())
+        matches = matches_to_dataframe(requests.get(f"{BASE_URL}/tournament/matches/{tournament_name}").json())
 
         st.subheader('Ongoing Matches')
         st.dataframe(matches[matches['status'] == "ongoing"])
