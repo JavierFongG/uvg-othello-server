@@ -292,4 +292,6 @@ def get_ongoing_matches(tournament_name: str):
         match["_id"] = str(match["_id"])  # Convert ObjectId to string
     return {"matches": matches}
 
-
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app)
