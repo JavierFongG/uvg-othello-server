@@ -6,7 +6,9 @@ import random
 
 app = FastAPI()
 
-
+@app.get("/")
+def read_root():
+    return {"message": "Hello, World!"}
 
 @app.post("/tournament/create")
 def create_tournament(tournament: TournamentCreate):
