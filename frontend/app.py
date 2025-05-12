@@ -33,55 +33,96 @@ def matches_to_dataframe(match_data):
 BASE_URL = 'https://7b679617-8c6b-4d0f-bb51-0505412c6c17.us-east-1.cloud.genez.io'
 
 # Initialize session state for tournament data
+
+if "current_matches" not in st.session_state: 
+    st.session_state.current_matches = pd.DataFrame(columns = ['Black Player', 'Black Pieces', 'White Pieces', 'White Player'])
+if "ended_matches" not in st.session_state: 
+    st.session_state.ended_matches = pd.DataFrame(columns = ['Black Player', 'Black Pieces', 'White Pieces', 'White Player', 'Winner'])
 if "tournament_data" not in st.session_state:
-    st.session_state.tournament_data = pd.DataFrame(columns=["Player", "Wins", "Losses", "Draws"])
+    st.session_state.tournament_data = pd.DataFrame(columns=["Player", "Points", "Wins", "Losses", "Draws", "Dif"])
 
-# Title of the app
-st.title("Othello Tournament Tracker")
 
-# Input for tournament name
-tournament_name = st.text_input("Enter Tournament Name", "")
+st.title('Othello Tournament')
 
-# Display tournament name
-if tournament_name:
-    st.header(f"Tournament: {tournament_name}")
+tournament_name = st.text_input('Tournament name:')
 
-req = requests.get(f"{BASE_URL}/tournament/available")
+if tournament_name: 
+    ava_url = f"{BASE_URL}/tournament/available"
+    print(ava_url)
+    available_tournaments_req = requests.get(ava_url)
+    available_tournaments = available_tournaments_req.json()['available_tournaments']
 
-available_tournaments = req.json()['available_tournaments']
-
-if tournament_name:
     if tournament_name not in available_tournaments: 
-        req = requests.post("{BASE_URL}/tournament/create", json={"name": tournament_name})
+        create_req = requests.post(f"{BASE_URL}/tournament/create", json={"name": tournament_name})
 
-    req = requests.get(f"{BASE_URL}/tournament/players/{tournament_name}")
+    st.header(tournament_name)
+    
+    row_1  = st.columns([1,9,1])
+    with row_1[0]:
+        st.subheader("Standings")
+    with row_1[2]: 
+        refresh_players = st.button("Refresh Players")
+    
+    if refresh_players:
+        players_req = requests.get(f"{BASE_URL}/tournament/players/{tournament_name}")   
+        players_req = pd.DataFrame(players_req.json()['players'])
+        players_req['points'] = players_req['wins'] * 3 + players_req['draws']
 
-    # st.json(req.json())
-    st.dataframe(pd.DataFrame(req.json()['players']))
+        st.session_state.tournament_data = players_req.filter(['name', 'points', 'wins', 'drawss', 'loses', 'pieces_diff']).rename(
+            columns={
+                'name': 'Player',
+                'points': 'Points',
+                'wins': 'Wins',
+                'loses': 'Losses',
+                'draws': 'Draws',
+                'pieces_diff': 'Dif'
+            }
+        )
+    st.dataframe(st.session_state.tournament_data, use_container_width = True, hide_index = True)
 
-    play_button = st.button('Play')
+    play = st.button('Start Round')
 
-    if play_button: 
-        req = requests.post("{BASE_URL}/pair/", params={"tournament_name": tournament_name})
+    if play: 
+        pairing_req = requests.post(f"{BASE_URL}/pair/", params={"tournament_name": tournament_name})
         
-        if req.status_code == 200: 
-            st.text('Empecemos!!!')
-        if req.status_code == 400: 
-            st.text('Espera! Aun no ha terminado la partida anterior')
+        if pairing_req.status_code == 200: 
+            st.text('Lets start!!!')
+        if pairing_req.status_code == 400: 
+            st.text('Round on going')
 
-        # Example usage:
-    
-    
-    refresh_button = st.button('Refresh')
+    row_3  = st.columns([2,8,1])
+    with row_3[0]:
+        st.subheader("Current Matches")
+    with row_3[2]: 
+        refresh_matches = st.button("Refresh Matches")
 
-    if refresh_button:
+    if refresh_matches:
         matches = matches_to_dataframe(requests.get(f"{BASE_URL}/tournament/matches/{tournament_name}").json())
+        st.session_state.current_matches = matches[matches['status'] == "ongoing"].filter(['black_player', 'black_pieces_count', 'white_pieces_count', 'white_player']).rename(
+            columns={
+                'black_player': 'Black Player',
+                'black_pieces_count': 'Black Pieces',
+                'white_pieces_count': 'White Pieces',
+                'white_player': 'White Player'
+            }
+        )
 
-        st.subheader('Ongoing Matches')
-        st.dataframe(matches[matches['status'] == "ongoing"])
+        st.session_state.ended_matches = matches[matches['status'] == "ended"].filter(['black_player', 'black_pieces_count', 'white_pieces_count', 'white_player']).rename(
+            columns={
+                'black_player': 'Black Player',
+                'black_pieces_count': 'Black Pieces',
+                'white_pieces_count': 'White Pieces',
+                'white_player': 'White Player'  
+            }
+        )
 
-        st.subheader('Ended Matches')
-        st.dataframe(matches[matches['status'] == "ended"])
+        st.session_state.ended_matches['Winner'] = st.session_state.ended_matches.apply(
+            lambda row: row['Black Player'] if row['Black Pieces'] > row['White Pieces'] else row['White Player'] if row['White Pieces'] > row['Black Pieces'] else 'Draw',
+            axis=1
+        )
 
 
-    
+    st.dataframe(st.session_state.current_matches, use_container_width = True, hide_index = True)
+    st.subheader("History")
+    st.dataframe(st.session_state.ended_matches, use_container_width = True, hide_index = True)
+
