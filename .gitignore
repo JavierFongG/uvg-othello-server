@@ -12,3 +12,5 @@ venv/
 ENV/ 
 env.bak/ 
 venv.bak/ 
+frontend/testing.ipynb
+frontend/testing.ipynb
