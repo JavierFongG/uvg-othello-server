@@ -12,14 +12,14 @@ Follow these steps to run the app locally using Streamlit:
 
 ## Steps to Run the App
 
-1. Navigate to the directory containing the app file:
+1. Navigate to the directory where the app file is located. For example:
     ```bash
-    cd /Users/javi.fong/Documents/UVG - Docente/CC3085 Inteligencia Artificial/othello/uvg-othello-server/frontend
+    cd ~/uvg-othello-server/frontend
     ```
 
 2. Run the Streamlit app:
     ```bash
-    streamlit run front_end.md
+    streamlit run app.py
     ```
 
 3. Open your browser and go to the following URL:
