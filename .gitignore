@@ -1,6 +1,7 @@
 .vercel
 *.log
 *.pyc
+*.ipynb
 __pycache__
 
 # Environments 

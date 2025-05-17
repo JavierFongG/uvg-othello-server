@@ -26,7 +26,7 @@ Follow these steps to run the app locally using Streamlit:
     ```
     http://localhost:8501
     ```
- d
+
 ## Troubleshooting
 
 - If you encounter issues, ensure all required dependencies are installed.
