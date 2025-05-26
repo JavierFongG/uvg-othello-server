@@ -2,6 +2,16 @@
 
 Follow these steps to run the app locally using Streamlit:
 
+
+## App Overview
+
+The interface consists of four main pages:
+
+1. **Tournaments**: View all existing tournaments.
+2. **Players**: Select a tournament to see the current standings in that tournament.
+3. **Matches**: View ongoing matches.
+4. **Admin**: Manage tournaments by selecting a winner for a match and overwriting the wins, losses, and draws of a player in a tournament.
+
 ## Prerequisites
 
 1. Ensure you have Python installed (version 3.7 or higher).
@@ -26,6 +36,15 @@ Follow these steps to run the app locally using Streamlit:
     ```
     http://localhost:8501
     ```
+
+    ## Environment Configuration
+
+    4. Create a `.env` file in the same directory as the app. Add the following line to specify the backend URL:
+        ```
+        BASE_URL=http://your-backend-url
+        ```
+
+       Replace `http://your-backend-url` with the actual URL of your backend server.
 
 ## Troubleshooting
 
