@@ -2,13 +2,13 @@ import streamlit as st
 import requests
 from dotenv import load_dotenv
 import pandas as pd 
-
+import os 
 # Load environment variables from .env file
 load_dotenv()
 
 # Get the BASE_URL from the .env file
-# BASE_URL = os.getenv("BASE_URL")
-BASE_URL = "http://localhost:8000"
+BASE_URL = os.getenv("BASE_URL")
+# BASE_URL = "http://localhost:8000"
 
 if "tournament_data" not in st.session_state:
     st.session_state.tournament_data = pd.DataFrame(columns=["Player", "Points", "Wins", "Losses", "Draws", "Dif"])

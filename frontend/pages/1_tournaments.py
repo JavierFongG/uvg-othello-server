@@ -11,8 +11,8 @@ if not "tournaments_list" in st.session_state:
 load_dotenv()
 
 # Get the BASE_URL from the .env file
-# BASE_URL = os.getenv("BASE_URL")
-BASE_URL = "http://localhost:8000"
+BASE_URL = os.getenv("BASE_URL")
+# BASE_URL = "http://localhost:8000"
 
 open_tournaments_req = requests.get(f"{BASE_URL}/tournament/list")
 st.session_state.open_tournaments = open_tournaments_req.json().get("tournaments", [])
