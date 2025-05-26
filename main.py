@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException
-from models import TournamentCreate, UserJoin, MatchResult, UserMove
+from models import TournamentCreate, UserJoin, MatchResult, UserMove, WinnerRequest, PlayerUpdate
 from db import db
 from othello_logic import valid_movements, move, check_board_status
 import random
@@ -38,6 +38,16 @@ def close_tournament(tournament: TournamentCreate):
     )
     return {"msg": f"Tournament {tournament.name} is now closed"}
 
+@app.post("/tournament/delete")
+def delete_tournament(tournament: TournamentCreate):
+    tournament_req = db.tournaments.find_one({"name": tournament.name})
+    if not tournament_req:
+        raise HTTPException(status_code=404, detail="Tournament not found")
+    print(tournament)
+    db.tournaments.delete_one({"name": tournament.name})
+    db.boards.delete_many({"tournament_name": tournament.name})  # Clean up related matches
+    return {"msg": f"Tournament {tournament.name} and its matches have been deleted"}
+
 @app.get("/tournament/available")
 def get_available_tournaments():
     cursor = db.tournaments.find({"status": "available"}, {"_id": 0, "name": 1})
@@ -45,23 +55,31 @@ def get_available_tournaments():
     names = [t["name"] for t in tournaments]
     return {"available_tournaments": names}
 
+@app.get("/tournament/list")
+def get_all_tournaments():
+    cursor = db.tournaments.find({}, {"_id": 0, "name": 1, "status": 1, "players": 1})
+    tournaments = list(cursor)
+    for tournament in tournaments:
+        tournament["player_count"] = len(tournament.get("players", []))
+        del tournament["players"]
+    return {"tournaments": tournaments}
 
 @app.post("/tournament/join")
 def join_tournament(user: UserJoin):
-    tournament = db.tournaments.find_one({"name": user.tournament_name})
+    tournament = db.tournaments.find_one({"name": user.tournament_name, "status": "available"})
     if not tournament:
-        raise HTTPException(status_code=404, detail="Tournament not found")
+        raise HTTPException(status_code=404, detail="Tournament not found or not available")
     
     for player in tournament["players"]:
         if user.username == player['name']:
-            raise HTTPException(status_code = 409, detail = f"Username {user.username} already exists")
+            raise HTTPException(status_code=409, detail=f"Username {user.username} already exists")
 
     tournament["players"].append({
-        'name' : user.username
-        , 'wins' : 0
-        , 'draws' : 0 
-        , 'loses' : 0
-        , 'pieces_diff' : 0 
+        'name': user.username,
+        'wins': 0,
+        'draws': 0,
+        'loses': 0,
+        'pieces_diff': 0
     })
 
     db.tournaments.update_one(
@@ -294,6 +312,70 @@ def get_ongoing_matches(tournament_name: str):
         match["_id"] = str(match["_id"])  # Convert ObjectId to string
     return {"matches": matches}
 
+@app.post("/match/set-winner")
+def set_winner(data: WinnerRequest):
+    tournament = db.tournaments.find_one({"name": data.tournament_name})
+    if not tournament:
+        raise HTTPException(status_code=404, detail="Tournament not found")
+
+    match = db.boards.find_one({
+        "$or": [
+            {"black_player.name": data.username},
+            {"white_player.name": data.username}
+        ],
+        "status": "ongoing",
+        "tournament_name": data.tournament_name
+    })
+    if not match:
+        raise HTTPException(status_code=404, detail="No ongoing match found for the user")
+
+    winner_color = "black" if match["black_player"]["name"] == data.username else "white"
+    loser_color = "white" if winner_color == "black" else "black"
+
+    for player in tournament["players"]:
+        if player["name"] == match[f"{winner_color}_player"]["name"]:
+            player["wins"] += 1
+        elif player["name"] == match[f"{loser_color}_player"]["name"]:
+            player["loses"] += 1
+
+    db.tournaments.update_one(
+        {"name": data.tournament_name},
+        {"$set": {"players": tournament["players"]}}
+    )
+
+    db.boards.update_one(
+        {"_id": match["_id"]},
+        {"$set": {"status": "ended", "winner": winner_color}}
+    )
+
+    return {"msg": f"Match ended. Winner is {data.username}"}
+
+@app.post("/tournament/update-player-stats")
+def update_player_stats(stats : PlayerUpdate):
+    tournament = db.tournaments.find_one({"name": stats.tournament_name})
+    if not tournament:
+        raise HTTPException(status_code=404, detail="Tournament not found")
+
+    player_found = False
+    for player in tournament["players"]:
+        if player["name"] == stats.player_name:
+            player["wins"] = stats.wins
+            player["draws"] = stats.draws
+            player["loses"] = stats.losses
+            player_found = True
+            break
+
+    if not player_found:
+        raise HTTPException(status_code=404, detail="Player not found in the tournament")
+
+    db.tournaments.update_one(
+        {"name": stats.tournament_name},
+        {"$set": {"players": tournament["players"]}}
+    )
+
+    return {"msg": f"Player {stats.player_name}'s stats updated in tournament {stats.tournament_name}"}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app)
+

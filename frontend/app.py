@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import requests 
+from dotenv import load_dotenv
+import os
 # from streamlit_autorefresh import st_autorefresh
 # Set Streamlit to wide mode
 
@@ -30,7 +32,11 @@ def matches_to_dataframe(match_data):
 
     return pd.DataFrame(rows)
 
-BASE_URL = 'https://7b679617-8c6b-4d0f-bb51-0505412c6c17.us-east-1.cloud.genez.io'
+# Load environment variables from .env file
+load_dotenv()
+
+# Get the BASE_URL from the .env file
+BASE_URL = os.getenv("BASE_URL")
 
 # Initialize session state for tournament data
 
@@ -94,7 +100,7 @@ if tournament_name:
     with row_3[0]:
         st.subheader("Current Matches")
     with row_3[2]: 
-        refresh_matches = st.button("Refresh Matches")
+        refresh_matches = st.button("Refresh")
 
     if refresh_matches:
         matches = matches_to_dataframe(requests.get(f"{BASE_URL}/tournament/matches/{tournament_name}").json())

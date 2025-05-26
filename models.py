@@ -21,3 +21,14 @@ class MatchResult(BaseModel):
     draw: bool
     board: List[List[int]]
     piece_diff: int
+
+class WinnerRequest(BaseModel):
+    tournament_name: str
+    username: str
+
+class PlayerUpdate(BaseModel):
+    tournament_name: str
+    player_name: str
+    wins: int
+    draws: int
+    losses: int
