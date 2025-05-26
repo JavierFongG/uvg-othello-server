@@ -9,8 +9,8 @@ import os
 load_dotenv()
 
 # Get the BASE_URL from the .env file
-BASE_URL = os.getenv("BASE_URL")
-# BASE_URL = "http://localhost:8000"
+# BASE_URL = os.getenv("BASE_URL")
+BASE_URL = "http://localhost:8000"
 
 
 st.set_page_config(layout="wide")
@@ -54,22 +54,50 @@ if finish_match:
             st.error(f"Failed to set winner: {response.text}")
         
 
-st.header("Set player values")
+st.header("Remove player")
 
-tournaments_update_req = requests.get(f"{BASE_URL}/tournament/list")
-tournaments_list = tournaments_update_req.json().get("tournaments", [])
-open_tournaments_list = [x for x in tournaments_list if x['status'] == "available"]
+remove_col1 , remove_col2 = st.columns(2)
+
+with remove_col1: 
+    remove_tournament = st.selectbox(key = "remove_tournament", label = "Select a tournament:", options = ["None"] + [t['name'] for t in open_tournaments])
+
+with remove_col2: 
+    remove_players = []
+    if remove_tournament: 
+        if remove_tournament != 'None': 
+            remove_players_req = requests.get(f"{BASE_URL}/tournament/players/{remove_tournament}")   
+            remove_players_req = remove_players_req.json()['players']
+            remove_players = [x['name'] for x in remove_players_req]
+        
+    remove_player = st.selectbox(key = "remove_player", label = "Select player to remove:", options = ['None'] + remove_players)
+
+remove_player_button = st.button("Remove")
+
+if remove_player_button: 
+    if remove_tournament and remove_player: 
+        response = requests.post(f"{BASE_URL}/tournament/remove-player", json={
+            "tournament_name": remove_tournament,
+            "username": remove_player
+        })
+
+        if response.status_code == 200:
+            st.success("Winner has been set successfully!")
+        else:
+            st.error(f"Failed to set winner: {response.text}")
+
+
+st.header("Set player values")
 
 col1, col2 = st.columns(2)
 
 with col1: 
-    selected_tournament_update = st.selectbox(key = "tournament_update", label = "Select a tournament:", options = ["None"] + [t['name'] for t in open_tournaments_list])
+    selected_tournament_update = st.selectbox(key = "tournament_update", label = "Select a tournament:", options = ["None"] + [t['name'] for t in open_tournaments])
 
 with col2:
     players_update_list = []
     
     if selected_tournament_update != 'None':
-        players_update = requests.get(f"{BASE_URL}/tournament/players/{selected_tournament_update}")   
+        players_update = requests.get(f"{BASE_URL}/tournament/players/{selected_tournament_update}") 
         players_update = players_update.json()['players']
         players_update_list = [x['name'] for x in players_update]
     

@@ -88,6 +88,23 @@ def join_tournament(user: UserJoin):
     )
     return {"msg": f"{user.username} joined {user.tournament_name}"}
 
+@app.post("/tournament/remove-player")
+def remove_player(user: UserJoin):
+    tournament = db.tournaments.find_one({"name": user.tournament_name})
+    if not tournament:
+        raise HTTPException(status_code=404, detail="Tournament not found")
+
+    updated_players = [player for player in tournament["players"] if player["name"] != user.username]
+    if len(updated_players) == len(tournament["players"]):
+        raise HTTPException(status_code=404, detail="Player not found in the tournament")
+
+    db.tournaments.update_one(
+        {"name": user.tournament_name},
+        {"$set": {"players": updated_players}}
+    )
+
+    return {"msg": f"Player {user.username} removed from tournament {user.tournament_name}"}
+
 @app.post("/pair/")
 def pair_players(tournament_name: str):
     tournament = db.tournaments.find_one({"name": tournament_name})
