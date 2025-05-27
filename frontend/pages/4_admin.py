@@ -9,8 +9,8 @@ import os
 load_dotenv()
 
 # Get the BASE_URL from the .env file
-# BASE_URL = os.getenv("BASE_URL")
-BASE_URL = "http://localhost:8000"
+BASE_URL = os.getenv("BASE_URL")
+# BASE_URL = "http://localhost:8000"
 
 
 st.set_page_config(layout="wide")

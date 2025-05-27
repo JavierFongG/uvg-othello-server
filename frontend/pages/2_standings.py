@@ -26,7 +26,7 @@ open_tournaments = [x for x in tournaments if x['status'] == "available"]
 selected_tournament = st.selectbox("Select a tournament:", ["None"] + [t['name'] for t in open_tournaments])
 
 if selected_tournament != "None":
-    st.write(f"You selected: {selected_tournament}")
+    st.header(f"You selected: {selected_tournament}")
 
     players_req = requests.get(f"{BASE_URL}/tournament/players/{selected_tournament}")   
     players_req = pd.DataFrame(players_req.json()['players'])
