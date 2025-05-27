@@ -289,8 +289,9 @@ def make_move(movement: UserMove):
 
     last_movement = match.get("last_movement")
     if last_movement:
+        print(last_movement, datetime.now())
         time_diff = (datetime.now() - last_movement).total_seconds()
-        if time_diff < 5:
+        if time_diff > 5:
             winner = "white" if current_turn == "black" else "black"
             db.boards.update_one(
                 {"_id": match["_id"]},
