@@ -3,6 +3,7 @@ from models import TournamentCreate, UserJoin, MatchResult, UserMove, WinnerRequ
 from db import db
 from othello_logic import valid_movements, move, check_board_status
 import random
+from datetime import datetime
 
 app = FastAPI()
 
@@ -212,6 +213,10 @@ def get_match_status(user: UserJoin):
     current_turn = match["turn"]
     
     if (current_turn == "black" and match["black_player"]["name"] != user.username) or (current_turn == "white" and match["white_player"]["name"] != user.username):
+        db.boards.update_one(
+            {"_id": match["_id"]},
+            {"$set": {"last_movement": datetime.now()}}
+        )
         raise HTTPException(status_code=409, detail="Is not your turn")
         # return {"msg": "IS NOT YOUR TURN", "board": []}
 
@@ -273,12 +278,26 @@ def make_move(movement: UserMove):
         "status": "ongoing"
         , "tournament_name" : movement.tournament_name
     })
+
+    
     if not match:
         raise HTTPException(status_code=404, detail="No ongoing match found for the user")
 
     current_turn = match["turn"]
     if (current_turn == "black" and match["black_player"]["name"] != movement.username) or (current_turn == "white" and match["white_player"]["name"] != movement.username):
         raise HTTPException(status_code=400, detail="Not your turn")
+
+    last_movement = match.get("last_movement")
+    if last_movement:
+        time_diff = (datetime.now() - last_movement).total_seconds()
+        if time_diff < 5:
+            winner = "white" if current_turn == "black" else "black"
+            db.boards.update_one(
+                {"_id": match["_id"]},
+                {"$set": {"status": "ended", "winner": winner}}
+            )
+            raise HTTPException(status_code=408, detail="Timeout: last movement more than 3s ago")
+
 
     player_color = 1 if current_turn == "white" else -1
     valid_moves = valid_movements(match["board"], player_color)
@@ -394,5 +413,6 @@ def update_player_stats(stats : PlayerUpdate):
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app)
 
