@@ -422,7 +422,7 @@ def get_ongoing_boards(tournament_name: str):
     boards = list(cursor)
     for board in boards:
         board["_id"] = str(board["_id"])  # Convert ObjectId to string
-    return {"ongoing_boards": boards}
+    return {"ongoing_boards": boards} 
 
 if __name__ == "__main__":
     import uvicorn
