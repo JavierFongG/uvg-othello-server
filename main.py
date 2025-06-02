@@ -412,6 +412,18 @@ def update_player_stats(stats : PlayerUpdate):
 
     return {"msg": f"Player {stats.player_name}'s stats updated in tournament {stats.tournament_name}"}
 
+@app.get("/boards/ongoing/{tournament_name}")
+def get_ongoing_boards(tournament_name: str):
+    tournament = db.tournaments.find_one({"name": tournament_name})
+    if not tournament:
+        raise HTTPException(status_code=404, detail="Tournament not found")
+
+    cursor = db.boards.find({"status": "ongoing", "tournament_name": tournament_name})
+    boards = list(cursor)
+    for board in boards:
+        board["_id"] = str(board["_id"])  # Convert ObjectId to string
+    return {"ongoing_boards": boards}
+
 if __name__ == "__main__":
     import uvicorn
 

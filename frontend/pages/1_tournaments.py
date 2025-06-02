@@ -1,18 +1,31 @@
 import streamlit as st 
 import requests
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 import os
 import pandas as pd
 
 if not "tournaments_list" in st.session_state: 
     st.session_state.open_tournaments = []
 
-# Load environment variables from .env file
-load_dotenv()
 
-# Get the BASE_URL from the .env file
+load_dotenv(override=True) 
 BASE_URL = os.getenv("BASE_URL")
-# BASE_URL = "http://localhost:8000"
+
+print('---------------------------------------')
+print('---------------------------------------')
+print('---------------------------------------')
+print('---------------------------------------')
+print('---------------------------------------')
+print('---------------------------------------')
+print('---------------------------------------')
+print(os.getenv("BASE_URL"))
+print('---------------------------------------')
+print('---------------------------------------')
+print('---------------------------------------')
+print('---------------------------------------')
+print('---------------------------------------')
+print('---------------------------------------')
+print('---------------------------------------')
 
 open_tournaments_req = requests.get(f"{BASE_URL}/tournament/list")
 st.session_state.open_tournaments = open_tournaments_req.json().get("tournaments", [])
